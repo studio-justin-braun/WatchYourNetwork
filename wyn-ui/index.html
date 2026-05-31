@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatchYourNetwork</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #060b14;
+      color: #c8d6e5;
+      font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #canvas {
+      display: block;
+      position: fixed;
+      inset: 0;
+    }
+
+    #hud {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    #hud h1 {
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #4A90D9;
+      margin-bottom: 4px;
+    }
+
+    #hud .status {
+      font-size: 11px;
+      color: #556677;
+    }
+
+    #hud .status.connected { color: #2ECC71; }
+    #hud .status.disconnected { color: #E74C3C; }
+
+    #legend {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 10;
+      background: rgba(10, 16, 28, 0.85);
+      border: 1px solid #1a2a3a;
+      border-radius: 6px;
+      padding: 10px 14px;
+      min-width: 160px;
+      font-size: 11px;
+    }
+
+    #legend h2 {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #4A90D9;
+      margin-bottom: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-label {
+      color: #8899aa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+    }
+
+    .legend-label.offline {
+      opacity: 0.4;
+    }
+
+    #stats {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      z-index: 10;
+      font-size: 10px;
+      color: #2a3a4a;
+      pointer-events: none;
+    }
+
+    #tooltip {
+      position: fixed;
+      z-index: 20;
+      background: rgba(10, 16, 28, 0.95);
+      border: 1px solid #2a3a4a;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 11px;
+      pointer-events: none;
+      display: none;
+      max-width: 220px;
+    }
+
+    #tooltip .tt-name { color: #c8d6e5; font-weight: bold; margin-bottom: 4px; }
+    #tooltip .tt-row  { color: #556677; }
+    #tooltip .tt-row span { color: #8899aa; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="hud">
+    <h1>WatchYourNetwork</h1>
+    <div class="status disconnected" id="conn-status">● Connecting…</div>
+  </div>
+
+  <div id="legend">
+    <h2>Nodes</h2>
+    <div id="legend-items"></div>
+  </div>
+
+  <div id="stats" id="stats">
+    <span id="pps-counter">0 pkt/s</span> &nbsp;|&nbsp; <span id="node-counter">0 nodes</span>
+  </div>
+
+  <div id="tooltip">
+    <div class="tt-name" id="tt-name"></div>
+    <div class="tt-row">IPs: <span id="tt-ips">—</span></div>
+    <div class="tt-row">Status: <span id="tt-status">—</span></div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

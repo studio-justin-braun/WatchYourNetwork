@@ -1,0 +1,15 @@
+server:
+  agent_port: 8765
+  ui_port: 8766
+  http_port: 8080
+
+topology:
+  connection_ttl: 1800
+  node_colors: {}
+
+internet_node:
+  label: "Internet"
+  color: "#95A5A6"
+
+logging:
+  level: INFO

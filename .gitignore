@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+*.log
+
+# Config files with real credentials / IPs
+wyn-agent/wyn-agent.conf
+wyn-server/config.yaml
+
+# OS
+.DS_Store
+Thumbs.db

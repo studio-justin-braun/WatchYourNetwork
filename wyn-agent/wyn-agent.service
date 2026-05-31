@@ -1,0 +1,14 @@
+[Unit]
+Description=WatchYourNetwork Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/wyn-agent/agent.py --config /etc/wyn-agent/wyn-agent.conf
+Restart=on-failure
+RestartSec=10
+User=root
+
+[Install]
+WantedBy=multi-user.target
