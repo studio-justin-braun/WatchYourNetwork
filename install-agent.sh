@@ -12,13 +12,20 @@ SERVICE="wyn-agent"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AGENT_DIR="$SCRIPT_DIR/wyn-agent"
 
+PIP_CMD=""
+declare -g -a SELECTED_IFACES=()
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 ok()   { echo -e "${GREEN}✓ $*${NC}"; }
 info() { echo -e "${CYAN}  $*${NC}"; }
 warn() { echo -e "${YELLOW}⚠ $*${NC}"; }
 die()  { echo -e "${RED}✗ $*${NC}"; exit 1; }
-ask()  { local prompt="$1" default="$2" var="$3"; read -rp "  $prompt [$default]: " "$var"; eval "$var=\"\${$var:-$default}\""; }
+ask()  {
+    local prompt="$1" default="$2" var="$3"
+    read -rp "  $prompt [$default]: " "$var"
+    eval "$var=\"\${$var:-$default}\""
+}
 
 banner() {
 echo -e "${BLUE}"
@@ -69,64 +76,108 @@ ensure_python() {
         if [[ $major -ge 3 && $minor -ge 10 ]]; then
             ok "Python $ver found"; return
         fi
-        warn "Python $ver found but 3.10+ required"
+        warn "Python $ver is too old (need 3.10+)"
     fi
 
     echo -e "${YELLOW}Installing Python 3.10+…${NC}"
     case "$PKG_MANAGER" in
-        apt)     apt-get install -y python3 python3-pip python3-dev ;;
-        dnf)     dnf install -y python3 python3-pip ;;
-        yum)     yum install -y python3 python3-pip ;;
-        pacman)  pacman -Sy --noconfirm python python-pip ;;
-        apk)     apk add --no-cache python3 py3-pip ;;
-        zypper)  zypper install -y python3 python3-pip ;;
-        *)       die "Install Python 3.10+ manually, then re-run this script." ;;
+        apt)     apt-get install -y python3 python3-dev ;;
+        dnf)     dnf install -y python3 ;;
+        yum)     yum install -y python3 ;;
+        pacman)  pacman -Sy --noconfirm python ;;
+        apk)     apk add --no-cache python3 ;;
+        zypper)  zypper install -y python3 ;;
+        *)       die "Install Python 3.10+ manually, then re-run." ;;
     esac
     ok "Python installed"
 }
 
-# ── pip install (no venv) ──────────────────────────────────────────────────────
+# ── pip: detect or install ─────────────────────────────────────────────────────
+
+ensure_pip() {
+    # Prefer python3 -m pip — always tied to the correct interpreter
+    if python3 -m pip --version &>/dev/null 2>&1; then
+        PIP_CMD="python3 -m pip"; ok "pip found (python3 -m pip)"; return
+    fi
+    if command -v pip3 &>/dev/null; then
+        PIP_CMD="pip3"; ok "pip3 found"; return
+    fi
+
+    echo -e "${YELLOW}pip not found — installing…${NC}"
+    case "$PKG_MANAGER" in
+        apt)     apt-get install -y python3-pip ;;
+        dnf)     dnf install -y python3-pip ;;
+        yum)     yum install -y python3-pip ;;
+        pacman)  pacman -S --noconfirm python-pip ;;
+        apk)     apk add --no-cache py3-pip ;;
+        zypper)  zypper install -y python3-pip ;;
+        *)       python3 -m ensurepip --upgrade 2>/dev/null \
+                     || die "Cannot install pip. Run: apt install python3-pip" ;;
+    esac
+
+    # Re-check after install
+    if python3 -m pip --version &>/dev/null 2>&1; then
+        PIP_CMD="python3 -m pip"
+    elif command -v pip3 &>/dev/null; then
+        PIP_CMD="pip3"
+    else
+        die "pip install failed. Run manually: ${PKG_MANAGER} install python3-pip"
+    fi
+    ok "pip installed"
+}
+
+# ── pip package install (no venv) ──────────────────────────────────────────────
 
 pip_install() {
     local req="$1"
     local flags=""
-    if pip3 install --help 2>/dev/null | grep -q "break-system-packages"; then
+    # PEP 668: modern Debian/Ubuntu block system-wide pip installs
+    if $PIP_CMD install --help 2>/dev/null | grep -q "break-system-packages"; then
         flags="--break-system-packages --ignore-installed"
     fi
     echo -e "${YELLOW}Installing Python packages…${NC}"
-    pip3 install $flags -r "$req"
+    $PIP_CMD install $flags -r "$req"
     ok "Python packages installed"
 }
 
-# ── Detect network interfaces ──────────────────────────────────────────────────
+# ── Interface selection (multi) ────────────────────────────────────────────────
 
-list_interfaces() {
+choose_interfaces() {
     echo ""
     echo -e "${BOLD}Available network interfaces:${NC}"
-    local idx=1
+
     declare -g -A IF_MAP=()
+    local idx=1
     while IFS= read -r iface; do
-        local ip
-        ip=$(ip -4 addr show "$iface" 2>/dev/null | grep -oP '(?<=inet\s)\S+' | head -1 || echo "no IP")
-        echo "  $idx) $iface  ($ip)"
+        local ip4
+        ip4=$(ip -4 addr show "$iface" 2>/dev/null \
+              | grep -oP '(?<=inet\s)\S+' | head -1 || true)
+        printf "  %2d)  %-22s %s\n" "$idx" "$iface" "${ip4:-(no IPv4)}"
         IF_MAP[$idx]="$iface"
         ((idx++))
     done < <(ip -o link show | awk -F': ' '{print $2}' | grep -vE '^lo$')
     echo ""
-}
 
-choose_interface() {
-    list_interfaces
+    echo -e "  ${CYAN}Enter numbers or names separated by spaces.${NC}"
+    echo -e "  ${CYAN}Examples:  1          →  first interface only${NC}"
+    echo -e "  ${CYAN}           1 6        →  interfaces 1 and 6${NC}"
+    echo -e "  ${CYAN}           ens6 wg0   →  by name${NC}"
+    echo ""
     local choice
-    ask "Enter interface name or number" "eth0" choice
+    read -rp "  Interfaces to monitor [1]: " choice
+    choice="${choice:-1}"
 
-    # If numeric, resolve from map
-    if [[ "$choice" =~ ^[0-9]+$ ]] && [[ -n "${IF_MAP[$choice]+x}" ]]; then
-        IFACE="${IF_MAP[$choice]}"
-    else
-        IFACE="$choice"
-    fi
-    ok "Interface: $IFACE"
+    SELECTED_IFACES=()
+    for token in $choice; do
+        if [[ "$token" =~ ^[0-9]+$ ]] && [[ -n "${IF_MAP[$token]+x}" ]]; then
+            SELECTED_IFACES+=("${IF_MAP[$token]}")
+        elif [[ -n "$token" ]]; then
+            SELECTED_IFACES+=("$token")
+        fi
+    done
+
+    [[ ${#SELECTED_IFACES[@]} -eq 0 ]] && die "No interfaces selected."
+    ok "Selected: ${SELECTED_IFACES[*]}"
 }
 
 # ── Agent configuration ────────────────────────────────────────────────────────
@@ -140,7 +191,7 @@ configure_agent() {
     echo ""
 
     local server_input
-    ask "WYN Server IP or hostname" "" server_input
+    read -rp "  WYN Server IP or hostname: " server_input
     [[ -z "$server_input" ]] && die "Server IP/hostname is required."
     SERVER_HOST="$server_input"
 
@@ -152,12 +203,13 @@ configure_agent() {
     ask "Node ID  (unique, no spaces)" "$default_hostname" NODE_ID
     ask "Node display name" "$default_hostname" NODE_NAME
 
-    choose_interface
+    choose_interfaces
 
     echo ""
-    info "Server  → ${SERVER_HOST}:${AGENT_PORT}"
-    info "Node ID → $NODE_ID  ($NODE_NAME)"
-    info "Iface   → $IFACE"
+    echo -e "${CYAN}  Summary:${NC}"
+    info "Server   →  ${SERVER_HOST}:${AGENT_PORT}"
+    info "Node ID  →  $NODE_ID  ($NODE_NAME)"
+    info "Ifaces   →  ${SELECTED_IFACES[*]}"
     echo ""
 }
 
@@ -165,6 +217,13 @@ configure_agent() {
 
 write_config() {
     mkdir -p "$CONFIG_DIR"
+
+    # Build YAML interface list
+    local iface_lines=""
+    for iface in "${SELECTED_IFACES[@]}"; do
+        iface_lines+="    - ${iface}"$'\n'
+    done
+
     cat > "$CONFIG_DIR/agent.conf" <<EOF
 server:
   host: "${SERVER_HOST}"
@@ -178,8 +237,7 @@ node:
 
 capture:
   interfaces:
-    - ${IFACE}
-  bpf_filter: ""
+${iface_lines}  bpf_filter: ""
   ignore_loopback: true
   ignore_multicast: true
   ignore_arp: true
@@ -198,14 +256,16 @@ EOF
 
 install_files() {
     mkdir -p "$INSTALL_DIR"
-    cp "$AGENT_DIR/agent.py"         "$INSTALL_DIR/"
-    cp "$AGENT_DIR/requirements.txt" "$INSTALL_DIR/"
+    cp "$AGENT_DIR/agent.py"          "$INSTALL_DIR/"
+    cp "$AGENT_DIR/requirements.txt"  "$INSTALL_DIR/"
     ok "Agent files installed to $INSTALL_DIR"
 }
 
 # ── systemd service ────────────────────────────────────────────────────────────
 
 install_service() {
+    local py3
+    py3=$(command -v python3)
     cat > /etc/systemd/system/${SERVICE}.service <<EOF
 [Unit]
 Description=WatchYourNetwork Agent (${NODE_NAME})
@@ -214,7 +274,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=$(command -v python3) $INSTALL_DIR/agent.py --config $CONFIG_DIR/agent.conf
+ExecStart=${py3} $INSTALL_DIR/agent.py --config $CONFIG_DIR/agent.conf
 WorkingDirectory=$INSTALL_DIR
 Restart=on-failure
 RestartSec=10
@@ -235,13 +295,12 @@ EOF
 main() {
     banner
 
-    if [[ $EUID -ne 0 ]]; then
-        die "Run with sudo: sudo bash $0"
-    fi
+    [[ $EUID -ne 0 ]] && die "Run with sudo: sudo bash $0"
 
     detect_os
     echo ""
     ensure_python
+    ensure_pip
     configure_agent
     write_config
     pip_install "$AGENT_DIR/requirements.txt"
@@ -274,9 +333,9 @@ main() {
     echo -e "${GREEN}${BOLD}═══════════════════════════════════════${NC}"
     echo -e "${GREEN}${BOLD}  Agent installation complete!${NC}"
     echo -e "${GREEN}${BOLD}═══════════════════════════════════════${NC}"
-    echo -e "  ${CYAN}Node   →  $NODE_NAME  ($NODE_ID)${NC}"
-    echo -e "  ${CYAN}Server →  ws://${SERVER_HOST}:${AGENT_PORT}${NC}"
-    echo -e "  ${CYAN}Iface  →  $IFACE${NC}"
+    echo -e "  ${CYAN}Node    →  $NODE_NAME  ($NODE_ID)${NC}"
+    echo -e "  ${CYAN}Server  →  ws://${SERVER_HOST}:${AGENT_PORT}${NC}"
+    echo -e "  ${CYAN}Ifaces  →  ${SELECTED_IFACES[*]}${NC}"
     echo ""
 }
 

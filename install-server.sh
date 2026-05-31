@@ -88,19 +88,48 @@ ensure_python() {
     ok "Python installed"
 }
 
-# ── pip package install (no venv) ──────────────────────────────────────────────
+# ── pip: detect or install ─────────────────────────────────────────────────────
+
+PIP_CMD=""
+
+ensure_pip() {
+    if python3 -m pip --version &>/dev/null 2>&1; then
+        PIP_CMD="python3 -m pip"; ok "pip found (python3 -m pip)"; return
+    fi
+    if command -v pip3 &>/dev/null; then
+        PIP_CMD="pip3"; ok "pip3 found"; return
+    fi
+
+    echo -e "${YELLOW}pip not found — installing…${NC}"
+    case "$PKG_MANAGER" in
+        apt)     apt-get install -y python3-pip ;;
+        dnf)     dnf install -y python3-pip ;;
+        yum)     yum install -y python3-pip ;;
+        pacman)  pacman -S --noconfirm python-pip ;;
+        apk)     apk add --no-cache py3-pip ;;
+        zypper)  zypper install -y python3-pip ;;
+        *)       python3 -m ensurepip --upgrade 2>/dev/null \
+                     || die "Cannot install pip. Run: apt install python3-pip" ;;
+    esac
+
+    if python3 -m pip --version &>/dev/null 2>&1; then
+        PIP_CMD="python3 -m pip"
+    elif command -v pip3 &>/dev/null; then
+        PIP_CMD="pip3"
+    else
+        die "pip install failed. Run manually: ${PKG_MANAGER} install python3-pip"
+    fi
+    ok "pip installed"
+}
 
 pip_install() {
     local req="$1"
     local flags=""
-
-    # Modern Debian/Ubuntu block system pip by default (PEP 668)
-    if pip3 install --help 2>/dev/null | grep -q "break-system-packages"; then
+    if $PIP_CMD install --help 2>/dev/null | grep -q "break-system-packages"; then
         flags="--break-system-packages --ignore-installed"
     fi
-
     echo -e "${YELLOW}Installing Python packages…${NC}"
-    pip3 install $flags -r "$req"
+    $PIP_CMD install $flags -r "$req"
     ok "Python packages installed"
 }
 
@@ -199,6 +228,7 @@ main() {
     detect_os
     echo ""
     ensure_python
+    ensure_pip
     configure_ports
     write_config
     pip_install "$SERVER_DIR/requirements.txt"
