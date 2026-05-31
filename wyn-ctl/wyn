@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CLI_VERSION="0.1.0"
-WYN_REPO="https://github.com/PLACEHOLDER/WatchYourNetwork"
+WYN_REPO="https://github.com/studio-justin-braun/WatchYourNetwork"
 
 SERVER_SERVICE="wyn-server"
 AGENT_SERVICE="wyn-agent"

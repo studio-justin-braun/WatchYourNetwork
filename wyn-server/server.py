@@ -16,7 +16,7 @@ import uvicorn
 import websockets
 import yaml
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -395,10 +395,20 @@ def create_fastapi_app(topo: TopologyManager, ui_clients: UIClients,
         )
     log.info("UI path: %s  (exists=%s)", html_path, html_path.exists())
 
+    _NO_CACHE = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    }
+
     @app.get("/")
     async def root():
         if html_path.exists():
-            return HTMLResponse(html_path.read_text(encoding="utf-8"))
+            return Response(
+                content=html_path.read_text(encoding="utf-8"),
+                media_type="text/html",
+                headers=_NO_CACHE,
+            )
         return JSONResponse({"status": "WYN Server running", "version": VERSION})
 
     @app.get("/api/topology")

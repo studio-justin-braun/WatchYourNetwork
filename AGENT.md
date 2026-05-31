@@ -22,21 +22,25 @@ The WYN Agent is a small Python daemon that runs on every server you want to mon
 ### Option A — Manual
 
 ```bash
-git clone https://github.com/yourusername/WatchYourNetwork.git
-cd WatchYourNetwork/wyn-agent
-pip install -r requirements.txt
-cp wyn-agent.example.conf wyn-agent.conf
-nano wyn-agent.conf
-sudo python agent.py
+git clone https://github.com/studio-justin-braun/WatchYourNetwork.git
+cd WatchYourNetwork
+sudo bash install-agent.sh
 ```
 
-### Option B — systemd Service (Recommended for Production)
+### Option B — Installer Script (Recommended)
 
-After editing `wyn-agent.conf`:
+```bash
+sudo bash install-agent.sh
+```
+
+The installer handles OS detection, pip, interface selection, config creation, and systemd service setup automatically.
+
+### Option C — Manual systemd Service
+
+After editing `/etc/wyn/agent.conf`:
 
 ```bash
 sudo cp wyn-agent.service /etc/systemd/system/wyn-agent.service
-# Edit the ExecStart path in the unit file if needed
 sudo systemctl daemon-reload
 sudo systemctl enable wyn-agent
 sudo systemctl start wyn-agent
@@ -112,9 +116,6 @@ capture:
   track_processes: false   # Attempt to resolve which process owns each connection
                            # Uses /proc/net/tcp and /proc/net/udp
                            # Requires root. Adds slight CPU overhead.
-
-  snap_length: 96          # Bytes to capture per packet (header only, no payload)
-                           # 96 bytes is enough for IPv4/IPv6 + TCP/UDP headers
 
 report:
   batch_interval_ms: 50    # Collect packets for this many ms, then send as a batch

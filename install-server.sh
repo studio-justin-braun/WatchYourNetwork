@@ -215,7 +215,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=$(command -v python3) $INSTALL_DIR/server.py --config $CONFIG_DIR/server.yaml
+ExecStart=$(command -v python3) $INSTALL_DIR/server.py --config $CONFIG_DIR/server.yaml --ui-dir $INSTALL_DIR/wyn-ui
 WorkingDirectory=$INSTALL_DIR
 Restart=on-failure
 RestartSec=5
