@@ -40,7 +40,6 @@ DEFAULT_CONFIG = {
         "ignore_multicast": True,
         "ignore_arp": True,
         "track_processes": False,
-        "snap_length": 96,
     },
     "report": {
         "batch_interval_ms": 50,
@@ -226,25 +225,28 @@ class WYNAgent:
     def _start_sniffer(self) -> None:
         ifaces = self.cfg["capture"]["interfaces"]
         bpf = self.cfg["capture"]["bpf_filter"] or None
-        snap = self.cfg["capture"]["snap_length"]
         try:
             self._sniffer = AsyncSniffer(
                 iface=ifaces,
                 filter=bpf,
                 prn=self._on_packet,
                 store=False,
-                snaplen=snap,
+                # snaplen omitted — not supported by Scapy's L2Socket (raw-socket backend)
             )
             self._sniffer.start()
             log.info("Sniffer started on %s  (bpf=%r)", ifaces, bpf or "none")
         except Exception as exc:
             log.error("Sniffer FAILED to start: %s", exc)
-            log.error("Is libpcap installed? Try: apt install libpcap-dev")
             raise
 
     def _stop_sniffer(self) -> None:
-        if self._sniffer and self._sniffer.running:
-            self._sniffer.stop()
+        if self._sniffer:
+            try:
+                if self._sniffer.running:
+                    self._sniffer.stop(join=True)
+            except Exception as exc:
+                log.debug("Sniffer stop: %s", exc)
+            self._sniffer = None
 
     def _drain_buffer(self) -> list[dict]:
         max_size = self.cfg["report"]["max_batch_size"]
