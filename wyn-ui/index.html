@@ -15,164 +15,159 @@
       user-select: none;
     }
 
-    #canvas {
-      display: block;
-      position: fixed;
-      inset: 0;
-    }
+    #canvas { display: block; position: fixed; inset: 0; }
 
+    /* ── HUD ─────────────────────────────────────────────────────────────── */
     #hud {
-      position: fixed;
-      top: 16px;
-      left: 16px;
-      z-index: 10;
-      pointer-events: none;
+      position: fixed; top: 16px; left: 16px;
+      z-index: 10; pointer-events: none;
     }
-
     #hud h1 {
-      font-size: 13px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: #4A90D9;
-      margin-bottom: 4px;
+      font-size: 13px; letter-spacing: 0.15em;
+      text-transform: uppercase; color: #4A90D9; margin-bottom: 4px;
     }
-
-    #hud .status {
-      font-size: 11px;
-      color: #556677;
-    }
-
-    #hud .status.connected { color: #2ECC71; }
+    #hud .status { font-size: 11px; color: #556677; }
+    #hud .status.connected    { color: #2ECC71; }
     #hud .status.disconnected { color: #E74C3C; }
 
+    /* ── Toolbar ─────────────────────────────────────────────────────────── */
+    #toolbar {
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      z-index: 10; display: flex; gap: 6px; align-items: center;
+    }
+    .tb-btn {
+      background: rgba(10,16,28,0.88); border: 1px solid #1a2a3a;
+      border-radius: 5px; padding: 5px 12px; font-size: 11px;
+      font-family: inherit; color: #8899aa; cursor: pointer;
+      letter-spacing: 0.05em; transition: border-color 0.15s, color 0.15s;
+    }
+    .tb-btn:hover { border-color: #4A90D9; color: #c8d6e5; }
+    .tb-btn.active { border-color: #4A90D9; color: #4A90D9; }
+
+    /* ── Legend ──────────────────────────────────────────────────────────── */
     #legend {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 10;
-      background: rgba(10, 16, 28, 0.85);
-      border: 1px solid #1a2a3a;
-      border-radius: 6px;
-      padding: 10px 14px;
-      min-width: 160px;
-      font-size: 11px;
+      position: fixed; top: 16px; right: 56px; z-index: 10;
+      background: rgba(10,16,28,0.85); border: 1px solid #1a2a3a;
+      border-radius: 6px; padding: 10px 14px; min-width: 150px; font-size: 11px;
     }
-
     #legend h2 {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: #4A90D9;
-      margin-bottom: 8px;
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.12em; color: #4A90D9; margin-bottom: 8px;
     }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 5px;
-    }
-
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
+    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
     .legend-label {
-      color: #8899aa;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 120px;
+      color: #8899aa; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; max-width: 110px;
     }
-
     .legend-label.offline { opacity: 0.4; }
 
-    /* ── Process filter panel ───────────────────────────────────────────── */
+    /* ── Settings panel ──────────────────────────────────────────────────── */
+    #settings-toggle {
+      position: fixed; top: 16px; right: 14px; z-index: 20;
+      width: 34px; height: 34px; border-radius: 6px;
+      background: rgba(10,16,28,0.88); border: 1px solid #1a2a3a;
+      color: #8899aa; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #settings-toggle:hover { border-color: #4A90D9; color: #4A90D9; }
 
+    #settings-panel {
+      position: fixed; top: 0; right: 0; bottom: 0; width: 280px;
+      background: rgba(8,13,24,0.97); border-left: 1px solid #1a2a3a;
+      z-index: 15; overflow-y: auto; padding: 20px 18px;
+      transform: translateX(100%); transition: transform 0.25s ease;
+    }
+    #settings-panel.open { transform: translateX(0); }
+
+    #settings-panel h2 {
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.15em;
+      color: #4A90D9; margin-bottom: 18px; padding-bottom: 8px;
+      border-bottom: 1px solid #1a2a3a;
+    }
+    #settings-panel h3 {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+      color: #556677; margin: 16px 0 8px;
+    }
+
+    .setting-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px; gap: 8px;
+    }
+    .setting-label { font-size: 11px; color: #8899aa; flex: 1; }
+
+    .toggle-group { display: flex; gap: 4px; }
+    .toggle-group .tb-btn { padding: 4px 10px; }
+
+    /* Color picker rows */
+    .color-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 7px;
+    }
+    .color-row label { font-size: 11px; color: #8899aa; }
+    .color-row input[type="color"] {
+      width: 32px; height: 22px; border: 1px solid #2a3a4a;
+      border-radius: 3px; cursor: pointer; padding: 1px; background: #0a101c;
+    }
+
+    /* Toggle switch */
+    .switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; background: #1a2a3a;
+      border-radius: 20px; cursor: pointer; transition: 0.2s;
+    }
+    .slider::before {
+      content: ''; position: absolute; width: 14px; height: 14px;
+      left: 3px; top: 3px; background: #556677;
+      border-radius: 50%; transition: 0.2s;
+    }
+    .switch input:checked + .slider { background: #1a4a6a; }
+    .switch input:checked + .slider::before {
+      transform: translateX(16px); background: #4A90D9;
+    }
+
+    #node-color-list .color-row { align-items: center; }
+    #node-color-list .node-color-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      flex-shrink: 0; margin-right: 6px;
+    }
+    #node-color-list .color-label-wrap {
+      display: flex; align-items: center; gap: 0; flex: 1;
+    }
+
+    /* ── Process filter ───────────────────────────────────────────────────── */
     #proc-filter {
-      position: fixed;
-      bottom: 16px;
-      right: 16px;
-      z-index: 10;
-      background: rgba(10, 16, 28, 0.88);
-      border: 1px solid #1a2a3a;
-      border-radius: 6px;
-      padding: 10px 14px;
-      min-width: 170px;
-      font-size: 11px;
-      display: none;
+      position: fixed; bottom: 16px; right: 16px; z-index: 10;
+      background: rgba(10,16,28,0.88); border: 1px solid #1a2a3a;
+      border-radius: 6px; padding: 10px 14px; min-width: 170px;
+      font-size: 11px; display: none;
     }
-
     #proc-filter h2 {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: #4A90D9;
-      margin-bottom: 8px;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+      color: #4A90D9; margin-bottom: 8px;
     }
+    .proc-item { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; cursor: pointer; }
+    .proc-item input[type="checkbox"] { accent-color: #4A90D9; cursor: pointer; }
+    .proc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .proc-label { color: #8899aa; white-space: nowrap; }
 
-    .proc-item {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin-bottom: 5px;
-      cursor: pointer;
-    }
-
-    .proc-item input[type="checkbox"] {
-      accent-color: #4A90D9;
-      cursor: pointer;
-      pointer-events: auto;
-    }
-
-    .proc-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .proc-label {
-      color: #8899aa;
-      white-space: nowrap;
-    }
-
-    #proc-filter-hint {
-      font-size: 9px;
-      color: #2a3a4a;
-      margin-top: 6px;
-    }
-
-    /* ── Stats bar ──────────────────────────────────────────────────────── */
-
+    /* ── Stats ────────────────────────────────────────────────────────────── */
     #stats {
-      position: fixed;
-      bottom: 16px;
-      left: 16px;
-      z-index: 10;
-      font-size: 10px;
-      color: #2a3a4a;
-      pointer-events: none;
+      position: fixed; bottom: 16px; left: 16px; z-index: 10;
+      font-size: 10px; color: #2a3a4a; pointer-events: none;
     }
 
+    /* ── Tooltip ─────────────────────────────────────────────────────────── */
     #tooltip {
-      position: fixed;
-      z-index: 20;
-      background: rgba(10, 16, 28, 0.95);
-      border: 1px solid #2a3a4a;
-      border-radius: 4px;
-      padding: 8px 12px;
-      font-size: 11px;
-      pointer-events: none;
-      display: none;
-      max-width: 220px;
+      position: fixed; z-index: 20;
+      background: rgba(10,16,28,0.95); border: 1px solid #2a3a4a;
+      border-radius: 4px; padding: 8px 12px; font-size: 11px;
+      pointer-events: none; display: none; max-width: 220px;
     }
-
-    #tooltip .tt-name { color: #c8d6e5; font-weight: bold; margin-bottom: 4px; }
-    #tooltip .tt-row  { color: #556677; }
+    #tooltip .tt-name  { color: #c8d6e5; font-weight: bold; margin-bottom: 4px; }
+    #tooltip .tt-row   { color: #556677; }
     #tooltip .tt-row span { color: #8899aa; }
   </style>
 </head>
@@ -184,6 +179,57 @@
     <div class="status disconnected" id="conn-status">● Connecting…</div>
   </div>
 
+  <!-- toolbar: layout + inside-net -->
+  <div id="toolbar">
+    <button class="tb-btn active" id="btn-net"  onclick="setLayout('net')">Net</button>
+    <button class="tb-btn"        id="btn-line" onclick="setLayout('line')">Line</button>
+    <button class="tb-btn"        id="btn-inside" onclick="toggleInsideNet()">Inside Net</button>
+  </div>
+
+  <!-- gear icon -->
+  <button id="settings-toggle" onclick="toggleSettings()" title="Settings">⚙</button>
+
+  <!-- settings slide-in -->
+  <div id="settings-panel">
+    <h2>Settings</h2>
+
+    <h3>Traffic Dot Colors</h3>
+    <div class="color-row">
+      <label>Inbound (Internet → Node)</label>
+      <input type="color" id="clr-inbound" value="#4ECDC4">
+    </div>
+    <div class="color-row">
+      <label>Outbound (Node → Internet)</label>
+      <input type="color" id="clr-outbound" value="#FF6B6B">
+    </div>
+    <div class="color-row">
+      <label>Internal (Node ↔ Node)</label>
+      <input type="color" id="clr-internal" value="#45B7D1">
+    </div>
+    <div class="color-row">
+      <label>Unknown / no process</label>
+      <input type="color" id="clr-default" value="#FFE033">
+    </div>
+
+    <h3>Node Colors</h3>
+    <div id="node-color-list"></div>
+
+    <h3>Layout</h3>
+    <div class="toggle-group">
+      <button class="tb-btn active" id="sp-btn-net"  onclick="setLayout('net')">Net</button>
+      <button class="tb-btn"        id="sp-btn-line" onclick="setLayout('line')">Line</button>
+    </div>
+
+    <h3>Inside Net Mode</h3>
+    <div class="setting-row">
+      <span class="setting-label">Show individual external IPs<br>instead of one Internet node</span>
+      <label class="switch">
+        <input type="checkbox" id="sp-inside-net" onchange="toggleInsideNet()">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
   <div id="legend">
     <h2>Nodes</h2>
     <div id="legend-items"></div>
@@ -192,7 +238,6 @@
   <div id="proc-filter">
     <h2>Applications</h2>
     <div id="proc-items"></div>
-    <div id="proc-filter-hint">Uncheck to hide traffic</div>
   </div>
 
   <div id="stats">
@@ -208,45 +253,77 @@
   <script>
 "use strict";
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Constants
+// ══════════════════════════════════════════════════════════════════════════════
+
 const WS_URL           = `ws://${location.host}/ws/ui`;
+const API              = `${location.protocol}//${location.host}/api`;
 const RECONNECT_MS     = 4000;
 const PACKET_SPEED     = 0.0025;
 const PACKET_RADIUS    = 4;
-const PACKET_COLOR_DEF = "#FFE033";
-const PACKET_GLOW_DEF  = "rgba(255,224,51,0.35)";
 const CONNECTION_FADE_MS = 1800000;
 const FORCE_REPULSION  = 9000;
 const FORCE_ATTRACTION = 0.035;
 const FORCE_DAMPING    = 0.82;
 const INTERNET_RADIUS  = 38;
 const NODE_RADIUS      = 22;
+const EXT_IP_RADIUS    = 14;
 const PHYSICS_STEPS    = 2;
 
-// Colors assigned to each distinct process name
 const PROC_PALETTE = [
-  "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#DDA0DD",
-  "#F7DC6F", "#BB8FCE", "#98D8C8", "#FF9F43", "#54A0FF",
-  "#5F27CD", "#48DBFB", "#FF9FF3", "#1DD1A1", "#FFC312",
+  "#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#DDA0DD",
+  "#F7DC6F","#BB8FCE","#98D8C8","#FF9F43","#54A0FF",
+  "#5F27CD","#48DBFB","#FF9FF3","#1DD1A1","#FFC312",
 ];
-const procColors   = new Map();  // process → color
-let   procColorIdx = 0;
 
-// Filter state: null = show all; otherwise Set of visible process names
-// "unknown" is the virtual name for packets with no process label
-const procVisible  = new Map();  // process → boolean (checked state)
+// ══════════════════════════════════════════════════════════════════════════════
+// Settings (localStorage)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const cfg = {
+  get colorInbound()  { return localStorage.getItem('wyn.clr.inbound')  || '#4ECDC4'; },
+  get colorOutbound() { return localStorage.getItem('wyn.clr.outbound') || '#FF6B6B'; },
+  get colorInternal() { return localStorage.getItem('wyn.clr.internal') || '#45B7D1'; },
+  get colorDefault()  { return localStorage.getItem('wyn.clr.default')  || '#FFE033'; },
+  get layoutMode()    { return localStorage.getItem('wyn.layout')       || 'net';     },
+  get nodeColors()    { try { return JSON.parse(localStorage.getItem('wyn.nodeColors') || '{}'); } catch { return {}; } },
+};
+
+function saveSetting(key, val) { localStorage.setItem(key, val); }
+
+// Sync color pickers from localStorage on load
+function initColorPickers() {
+  document.getElementById('clr-inbound').value  = cfg.colorInbound;
+  document.getElementById('clr-outbound').value = cfg.colorOutbound;
+  document.getElementById('clr-internal').value = cfg.colorInternal;
+  document.getElementById('clr-default').value  = cfg.colorDefault;
+
+  document.getElementById('clr-inbound') .addEventListener('input', e => saveSetting('wyn.clr.inbound',  e.target.value));
+  document.getElementById('clr-outbound').addEventListener('input', e => saveSetting('wyn.clr.outbound', e.target.value));
+  document.getElementById('clr-internal').addEventListener('input', e => saveSetting('wyn.clr.internal', e.target.value));
+  document.getElementById('clr-default') .addEventListener('input', e => saveSetting('wyn.clr.default',  e.target.value));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Process color registry
+// ══════════════════════════════════════════════════════════════════════════════
+
+const procColors  = new Map();
+let   procColorIdx = 0;
+const procVisible = new Map();
 let   filterActive = false;
 
 function getProcessColor(proc) {
-  if (!proc) return PACKET_COLOR_DEF;
+  if (!proc) return cfg.colorDefault;
   if (!procColors.has(proc)) {
-    procColors.set(proc, PROC_PALETTE[procColorIdx % PROC_PALETTE.length]);
-    procColorIdx++;
+    procColors.set(proc, PROC_PALETTE[procColorIdx++ % PROC_PALETTE.length]);
   }
   return procColors.get(proc);
 }
 
 function registerProcess(proc) {
-  const key = proc || "unknown";
+  const key = proc || 'unknown';
   if (procVisible.has(key)) return;
   procVisible.set(key, true);
   getProcessColor(proc);
@@ -255,50 +332,79 @@ function registerProcess(proc) {
 
 function isBulletVisible(proc) {
   if (!filterActive) return true;
-  const key = proc || "unknown";
-  return procVisible.get(key) !== false;
+  return procVisible.get(proc || 'unknown') !== false;
 }
 
 function isConnVisible(conn) {
   if (!filterActive) return true;
-  if (conn.processes.size === 0) return procVisible.get("unknown") !== false;
-  for (const p of conn.processes) {
-    if (procVisible.get(p) !== false) return true;
-  }
+  if (conn.processes.size === 0) return procVisible.get('unknown') !== false;
+  for (const p of conn.processes) if (procVisible.get(p) !== false) return true;
   return false;
 }
 
-const nodes       = new Map();
-const connections = new Map();
+// ══════════════════════════════════════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════════════════════════════════════
+
+const nodes       = new Map();   // id → node obj
+const connections = new Map();   // key → conn obj
 const bullets     = [];
 
-let pktCount = 0;
-let ppsDisplay = 0;
-let lastPpsCheck = performance.now();
+let insideNetMode = false;
 
-const canvas = document.getElementById("canvas");
-const ctx    = canvas.getContext("2d");
+// Internet Zone box geometry (computed each frame in inside_net mode)
+const iZone = { x: 0, y: 0, w: 0, h: 0 };
+
+let pktCount = 0, ppsDisplay = 0, lastPpsCheck = performance.now();
+
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
 
 function resize() {
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
+  if (cfg.layoutMode === 'line') scheduleLineLayout();
 }
-window.addEventListener("resize", resize);
+window.addEventListener('resize', resize);
 resize();
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Node management
+// ══════════════════════════════════════════════════════════════════════════════
+
 function createNode(data) {
-  const isInternet = data.id === "internet";
-  const existing = nodes.get(data.id);
-  const x = existing ? existing.x : (isInternet ? canvas.width * 0.82 : Math.random() * canvas.width * 0.6 + canvas.width * 0.1);
-  const y = existing ? existing.y : Math.random() * canvas.height * 0.7 + canvas.height * 0.15;
+  const isInternet = data.id === 'internet';
+  const isExternal = !!data.is_external;
+  const existing   = nodes.get(data.id);
+
+  let x, y;
+  if (existing) {
+    x = existing.x; y = existing.y;
+  } else if (isInternet) {
+    x = canvas.width * 0.82; y = canvas.height * 0.5;
+  } else if (isExternal) {
+    // Place inside the zone (updated once zone is computed)
+    x = canvas.width * 0.82 + (Math.random() - 0.5) * 100;
+    y = canvas.height * 0.5 + (Math.random() - 0.5) * 100;
+  } else {
+    x = Math.random() * canvas.width  * 0.6 + canvas.width  * 0.1;
+    y = Math.random() * canvas.height * 0.7 + canvas.height * 0.15;
+  }
+
+  const nodeColors = cfg.nodeColors;
+  const color = nodeColors[data.id] || data.color || '#95A5A6';
+
   return {
-    id: data.id, name: data.name, color: data.color,
+    id: data.id, name: data.name, color,
     online: data.online, ips: data.ips || [],
     x, y, vx: 0, vy: 0,
-    radius: isInternet ? INTERNET_RADIUS : NODE_RADIUS,
-    isInternet, pinned: isInternet,
+    radius: isExternal ? EXT_IP_RADIUS : (isInternet ? INTERNET_RADIUS : NODE_RADIUS),
+    isInternet, isExternal,
+    pinned: isInternet || isExternal,
     alpha: data.online ? 1 : 0.3,
     targetAlpha: data.online ? 1 : 0.3,
+    // Line-mode target positions
+    lineX: 0, lineY: 0,
   };
 }
 
@@ -306,12 +412,22 @@ function upsertNode(data) {
   const existing = nodes.get(data.id);
   if (existing) {
     existing.online = data.online;
-    existing.ips    = data.ips  || existing.ips;
-    existing.name   = data.name || existing.name;
+    existing.ips    = data.ips   || existing.ips;
+    existing.name   = data.name  || existing.name;
     existing.targetAlpha = data.online ? 1 : 0.3;
+    // Honor color override from server (e.g. after node-color API call)
+    const nodeColors = cfg.nodeColors;
+    if (!nodeColors[data.id] && data.color) existing.color = data.color;
   } else {
     nodes.set(data.id, createNode(data));
   }
+  updateLegend();
+  updateNodeColorPickers();
+  if (cfg.layoutMode === 'line') scheduleLineLayout();
+}
+
+function removeExternalIp(ip) {
+  nodes.delete(ip);
   updateLegend();
 }
 
@@ -320,24 +436,30 @@ function connKey(src, dst) { return `${src}→${dst}`; }
 function upsertConnection(src, dst, proc) {
   const key = connKey(src, dst);
   if (!connections.has(key)) {
-    connections.set(key, {
-      src, dst,
-      lastSeen: Date.now(),
-      alpha: 0, targetAlpha: 0.45,
-      processes: new Set(),
-      lastProc: null,
-    });
+    connections.set(key, { src, dst, lastSeen: Date.now(), alpha: 0, targetAlpha: 0.45, processes: new Set(), lastProc: null });
   }
   const conn = connections.get(key);
   conn.lastSeen = Date.now();
-  if (proc) {
-    conn.processes.add(proc);
-    conn.lastProc = proc;
-    registerProcess(proc);
-  }
+  if (proc) { conn.processes.add(proc); conn.lastProc = proc; registerProcess(proc); }
 }
 
 function removeConnection(src, dst) { connections.delete(connKey(src, dst)); }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Bullet direction detection
+// ══════════════════════════════════════════════════════════════════════════════
+
+function getBulletColor(srcId, dstId, proc) {
+  if (proc) return getProcessColor(proc);
+  const srcNode = nodes.get(srcId);
+  const dstNode = nodes.get(dstId);
+  const srcExt  = srcNode && (srcNode.isInternet || srcNode.isExternal);
+  const dstExt  = dstNode && (dstNode.isInternet || dstNode.isExternal);
+  if (srcExt && !dstExt) return cfg.colorInbound;
+  if (!srcExt && dstExt) return cfg.colorOutbound;
+  if (!srcExt && !dstExt) return cfg.colorInternal;
+  return cfg.colorDefault;
+}
 
 function spawnBullet(srcId, dstId, proc) {
   if (!nodes.get(srcId) || !nodes.get(dstId)) return;
@@ -345,80 +467,221 @@ function spawnBullet(srcId, dstId, proc) {
   bullets.push({ srcId, dstId, progress: 0, proc: proc || null });
 }
 
-// ── Physics ────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Layout modes
+// ══════════════════════════════════════════════════════════════════════════════
 
-function applyForces(dt) {
-  const allNodes = [...nodes.values()];
-  for (let step = 0; step < PHYSICS_STEPS; step++) {
-    for (let i = 0; i < allNodes.length; i++) {
-      for (let j = i + 1; j < allNodes.length; j++) {
-        const a = allNodes[i], b = allNodes[j];
-        const dx = b.x - a.x, dy = b.y - a.y;
-        const dist2 = dx*dx + dy*dy + 1;
-        const f = FORCE_REPULSION / dist2;
-        const dist = Math.sqrt(dist2);
-        const fx = f*dx/dist, fy = f*dy/dist;
-        if (!a.pinned) { a.vx -= fx; a.vy -= fy; }
-        if (!b.pinned) { b.vx += fx; b.vy += fy; }
-      }
+let layoutMode = cfg.layoutMode;
+let lineLayoutDirty = false;
+
+function setLayout(mode) {
+  layoutMode = mode;
+  saveSetting('wyn.layout', mode);
+
+  document.getElementById('btn-net') .classList.toggle('active', mode === 'net');
+  document.getElementById('btn-line').classList.toggle('active', mode === 'line');
+  document.getElementById('sp-btn-net') .classList.toggle('active', mode === 'net');
+  document.getElementById('sp-btn-line').classList.toggle('active', mode === 'line');
+
+  if (mode === 'line') {
+    // Un-pin all non-internet nodes for line layout
+    for (const n of nodes.values()) {
+      if (!n.isInternet && !n.isExternal) n.pinned = false;
     }
-    for (const conn of connections.values()) {
-      const src = nodes.get(conn.src), dst = nodes.get(conn.dst);
-      if (!src || !dst) continue;
-      const dx = dst.x - src.x, dy = dst.y - src.y;
-      const dist = Math.sqrt(dx*dx + dy*dy) + 0.001;
-      const stretch = (dist - 220) * FORCE_ATTRACTION;
-      const fx = stretch*dx/dist, fy = stretch*dy/dist;
-      if (!src.pinned) { src.vx += fx; src.vy += fy; }
-      if (!dst.pinned) { dst.vx -= fx; dst.vy -= fy; }
-    }
-    const margin = 60;
-    for (const n of allNodes) {
-      if (n.pinned) continue;
-      n.vx *= FORCE_DAMPING; n.vy *= FORCE_DAMPING;
-      n.x  += n.vx * dt * 0.06;
-      n.y  += n.vy * dt * 0.06;
-      n.x = Math.max(margin, Math.min(canvas.width  - margin, n.x));
-      n.y = Math.max(margin, Math.min(canvas.height - margin, n.y));
+    scheduleLineLayout();
+  } else {
+    // Restore net mode: un-pin everything except internet
+    for (const n of nodes.values()) {
+      n.pinned = n.isInternet;
     }
   }
 }
 
-// ── Drawing ────────────────────────────────────────────────────────────────────
+function scheduleLineLayout() { lineLayoutDirty = true; }
+
+function computeLinePositions() {
+  const local = [...nodes.values()].filter(n => !n.isInternet && !n.isExternal);
+  local.sort((a, b) => a.name.localeCompare(b.name));
+
+  const leftX   = 200;
+  const padding = 90;
+  const step    = local.length > 1
+    ? Math.min(70, (canvas.height - padding * 2) / (local.length - 1))
+    : 0;
+  const startY  = canvas.height / 2 - step * (local.length - 1) / 2;
+
+  local.forEach((n, i) => {
+    n.lineX = leftX;
+    n.lineY = startY + i * step;
+  });
+
+  const iNode = nodes.get('internet');
+  if (iNode) {
+    iNode.lineX = canvas.width - 200;
+    iNode.lineY = canvas.height / 2;
+  }
+
+  lineLayoutDirty = false;
+}
+
+// Lerp nodes toward their line-mode positions
+function applyLineLerp(dt) {
+  if (lineLayoutDirty) computeLinePositions();
+  const speed = Math.min(dt * 0.007, 0.2);
+  for (const n of nodes.values()) {
+    if (n.isExternal) continue;
+    n.x += (n.lineX - n.x) * speed;
+    n.y += (n.lineY - n.y) * speed;
+    n.vx = 0; n.vy = 0;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Physics (Net mode)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function applyForces(dt) {
+  const all = [...nodes.values()];
+  for (let step = 0; step < PHYSICS_STEPS; step++) {
+    for (let i = 0; i < all.length; i++) {
+      for (let j = i + 1; j < all.length; j++) {
+        const a = all[i], b = all[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d2 = dx*dx + dy*dy + 1;
+        const f  = FORCE_REPULSION / d2;
+        const d  = Math.sqrt(d2);
+        const fx = f*dx/d, fy = f*dy/d;
+        if (!a.pinned) { a.vx -= fx; a.vy -= fy; }
+        if (!b.pinned) { b.vx += fx; b.vy += fy; }
+      }
+    }
+    for (const c of connections.values()) {
+      const s = nodes.get(c.src), d = nodes.get(c.dst);
+      if (!s || !d) continue;
+      const dx = d.x - s.x, dy = d.y - s.y;
+      const dist = Math.sqrt(dx*dx + dy*dy) + 0.001;
+      const stretch = (dist - 220) * FORCE_ATTRACTION;
+      const fx = stretch*dx/dist, fy = stretch*dy/dist;
+      if (!s.pinned) { s.vx += fx; s.vy += fy; }
+      if (!d.pinned) { d.vx -= fx; d.vy -= fy; }
+    }
+    const m = 60;
+    for (const n of all) {
+      if (n.pinned) continue;
+      n.vx *= FORCE_DAMPING; n.vy *= FORCE_DAMPING;
+      n.x  += n.vx * dt * 0.06;
+      n.y  += n.vy * dt * 0.06;
+      n.x = Math.max(m, Math.min(canvas.width  - m, n.x));
+      n.y = Math.max(m, Math.min(canvas.height - m, n.y));
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Internet Zone (Inside Net mode)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function updateIZone() {
+  const iNode = nodes.get('internet');
+  if (!iNode) return;
+  const extNodes = [...nodes.values()].filter(n => n.isExternal);
+  const pad = 30;
+  const cols = Math.max(1, Math.ceil(Math.sqrt(extNodes.length)));
+  const iw   = cols * 60 + pad * 2;
+  const ih   = Math.ceil(extNodes.length / cols) * 50 + pad * 2 + 18; // +18 for title
+  iZone.w = Math.max(iw, 140);
+  iZone.h = Math.max(ih, 100);
+  iZone.x = canvas.width - iZone.w - 30;
+  iZone.y = (canvas.height - iZone.h) / 2;
+
+  // Arrange ext nodes inside zone in a grid
+  extNodes.forEach((n, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    n.x = iZone.x + pad + col * 60 + 20;
+    n.y = iZone.y + pad + 18 + row * 50 + 10;
+  });
+
+  // Move internet node to center-right of zone (or hide it)
+  const iNodeTarget_x = iZone.x + iZone.w / 2;
+  const iNodeTarget_y = iZone.y - 40;
+  iNode.x += (iNodeTarget_x - iNode.x) * 0.05;
+  iNode.y += (iNodeTarget_y - iNode.y) * 0.05;
+}
+
+function drawIZone() {
+  if (!insideNetMode) return;
+  const extCount = [...nodes.values()].filter(n => n.isExternal).length;
+  if (extCount === 0) return;
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(149,165,166,0.25)';
+  ctx.lineWidth   = 1;
+  ctx.setLineDash([6, 4]);
+  ctx.strokeRect(iZone.x, iZone.y, iZone.w, iZone.h);
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = 'rgba(149,165,166,0.04)';
+  ctx.fillRect(iZone.x, iZone.y, iZone.w, iZone.h);
+
+  ctx.fillStyle = 'rgba(149,165,166,0.5)';
+  ctx.font      = '9px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('Internet Zone', iZone.x + 8, iZone.y + 12);
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Drawing
+// ══════════════════════════════════════════════════════════════════════════════
 
 function hexToRgb(hex) {
   return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
 }
 
+function nodeEffectiveColor(n) {
+  const overrides = cfg.nodeColors;
+  return overrides[n.id] || n.color;
+}
+
 function drawNode(n) {
+  const color = nodeEffectiveColor(n);
+  const rgb   = hexToRgb(color);
   ctx.save();
   ctx.globalAlpha = n.alpha;
-  if (n.online) {
+
+  if (n.online && !n.isExternal) {
     const grd = ctx.createRadialGradient(n.x, n.y, n.radius*0.5, n.x, n.y, n.radius*2.2);
-    grd.addColorStop(0, `rgba(${hexToRgb(n.color)},0.18)`);
-    grd.addColorStop(1, "rgba(0,0,0,0)");
+    grd.addColorStop(0, `rgba(${rgb},0.18)`);
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = grd;
     ctx.beginPath(); ctx.arc(n.x, n.y, n.radius*2.2, 0, Math.PI*2); ctx.fill();
   }
+
   ctx.beginPath(); ctx.arc(n.x, n.y, n.radius, 0, Math.PI*2);
-  ctx.strokeStyle = n.color; ctx.lineWidth = n.isInternet ? 2.5 : 2; ctx.stroke();
-  ctx.fillStyle = `rgba(${hexToRgb(n.color)},${n.isInternet ? 0.12 : 0.16})`; ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = n.isInternet ? 2.5 : (n.isExternal ? 1 : 2);
+  ctx.stroke();
+  ctx.fillStyle = `rgba(${rgb},${n.isInternet ? 0.12 : 0.16})`; ctx.fill();
+
   if (n.isInternet) {
-    ctx.strokeStyle = `rgba(${hexToRgb(n.color)},0.5)`; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(n.x - n.radius, n.y); ctx.lineTo(n.x + n.radius, n.y); ctx.stroke();
+    ctx.strokeStyle = `rgba(${rgb},0.5)`; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(n.x-n.radius, n.y); ctx.lineTo(n.x+n.radius, n.y); ctx.stroke();
     ctx.beginPath(); ctx.ellipse(n.x, n.y, n.radius*0.5, n.radius, 0, 0, Math.PI*2); ctx.stroke();
-  } else if (!n.online) {
-    const s = n.radius * 0.4;
-    ctx.strokeStyle = `rgba(${hexToRgb(n.color)},0.4)`; ctx.lineWidth = 1.5;
+  } else if (!n.online && !n.isExternal) {
+    const s = n.radius*0.4;
+    ctx.strokeStyle = `rgba(${rgb},0.4)`; ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(n.x-s, n.y-s); ctx.lineTo(n.x+s, n.y+s);
-    ctx.moveTo(n.x+s, n.y-s); ctx.lineTo(n.x-s, n.y+s);
+    ctx.moveTo(n.x-s,n.y-s); ctx.lineTo(n.x+s,n.y+s);
+    ctx.moveTo(n.x+s,n.y-s); ctx.lineTo(n.x-s,n.y+s);
     ctx.stroke();
   }
-  ctx.fillStyle = `rgba(${hexToRgb(n.color)},${n.online ? 0.9 : 0.4})`;
-  ctx.font = `${n.isInternet ? 11 : 10}px monospace`;
-  ctx.textAlign = "center"; ctx.textBaseline = "top";
-  ctx.fillText(n.name, n.x, n.y + n.radius + 5);
+
+  ctx.fillStyle = `rgba(${rgb},${n.online ? (n.isExternal ? 0.7 : 0.9) : 0.4})`;
+  ctx.font = `${n.isInternet ? 11 : (n.isExternal ? 9 : 10)}px monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const label = n.isExternal ? n.name : n.name;
+  ctx.fillText(label, n.x, n.y + n.radius + 4);
   ctx.restore();
 }
 
@@ -434,43 +697,73 @@ function drawConnection(conn) {
 
   ctx.save();
   ctx.globalAlpha = conn.alpha;
-  ctx.strokeStyle = "#2a4a6a"; ctx.lineWidth = 1; ctx.setLineDash([4, 6]);
-  ctx.beginPath(); ctx.moveTo(src.x, src.y); ctx.lineTo(dst.x, dst.y); ctx.stroke();
+
+  if (layoutMode === 'line') {
+    // Arc-style for line mode
+    const mx  = (src.x + dst.x) / 2;
+    const my  = (src.y + dst.y) / 2;
+    const sameCol = Math.abs(src.x - dst.x) < 50; // both local nodes
+    ctx.strokeStyle = '#2a4a6a'; ctx.lineWidth = 1; ctx.setLineDash([4, 6]);
+    ctx.beginPath();
+    if (sameCol) {
+      const offset = Math.sign(src.y - dst.y) * -60;
+      ctx.moveTo(src.x, src.y);
+      ctx.bezierCurveTo(src.x - 80, src.y + offset, dst.x - 80, dst.y - offset, dst.x, dst.y);
+    } else {
+      ctx.moveTo(src.x, src.y);
+      ctx.lineTo(dst.x, dst.y);
+    }
+    ctx.stroke();
+  } else {
+    ctx.strokeStyle = '#2a4a6a'; ctx.lineWidth = 1; ctx.setLineDash([4, 6]);
+    ctx.beginPath(); ctx.moveTo(src.x, src.y); ctx.lineTo(dst.x, dst.y); ctx.stroke();
+  }
   ctx.setLineDash([]);
 
-  // Process label at midpoint
   if (conn.lastProc) {
     const mx = (src.x + dst.x) / 2;
     const my = (src.y + dst.y) / 2;
     const procColor = getProcessColor(conn.lastProc);
     ctx.globalAlpha = Math.min(conn.alpha * 2.5, 0.85);
-    ctx.font = "9px monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    const label = conn.lastProc;
-    const tw = ctx.measureText(label).width;
-    ctx.fillStyle = "rgba(6,11,20,0.75)";
+    ctx.font = '9px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const tw = ctx.measureText(conn.lastProc).width;
+    ctx.fillStyle = 'rgba(6,11,20,0.75)';
     ctx.fillRect(mx - tw/2 - 3, my - 7, tw + 6, 14);
     ctx.fillStyle = procColor;
-    ctx.fillText(label, mx, my);
+    ctx.fillText(conn.lastProc, mx, my);
   }
   ctx.restore();
 }
 
-function drawBullet(bullet) {
-  const src = nodes.get(bullet.srcId), dst = nodes.get(bullet.dstId);
+function drawBullet(b) {
+  const src = nodes.get(b.srcId), dst = nodes.get(b.dstId);
   if (!src || !dst) return;
-  const x = src.x + (dst.x - src.x) * bullet.progress;
-  const y = src.y + (dst.y - src.y) * bullet.progress;
 
-  const color = getProcessColor(bullet.proc);
+  let x, y;
+  if (layoutMode === 'line') {
+    const sameCol = Math.abs(src.x - dst.x) < 50;
+    if (sameCol) {
+      const offset = Math.sign(src.y - dst.y) * -60;
+      const t = b.progress;
+      x = (1-t)**3 * src.x + 3*(1-t)**2*t * (src.x-80) + 3*(1-t)*t**2 * (dst.x-80) + t**3 * dst.x;
+      y = (1-t)**3 * src.y + 3*(1-t)**2*t * (src.y+offset) + 3*(1-t)*t**2 * (dst.y-offset) + t**3 * dst.y;
+    } else {
+      x = src.x + (dst.x - src.x) * b.progress;
+      y = src.y + (dst.y - src.y) * b.progress;
+    }
+  } else {
+    x = src.x + (dst.x - src.x) * b.progress;
+    y = src.y + (dst.y - src.y) * b.progress;
+  }
+
+  const color = getBulletColor(b.srcId, b.dstId, b.proc);
   const rgb   = hexToRgb(color);
 
   ctx.save();
   const grd = ctx.createRadialGradient(x, y, 0, x, y, PACKET_RADIUS*3);
-  grd.addColorStop(0, color);
+  grd.addColorStop(0,   color);
   grd.addColorStop(0.4, `rgba(${rgb},0.35)`);
-  grd.addColorStop(1, `rgba(${rgb},0)`);
+  grd.addColorStop(1,   `rgba(${rgb},0)`);
   ctx.fillStyle = grd;
   ctx.beginPath(); ctx.arc(x, y, PACKET_RADIUS*3, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = color;
@@ -478,23 +771,34 @@ function drawBullet(bullet) {
   ctx.restore();
 }
 
-// ── Render loop ────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Render loop
+// ══════════════════════════════════════════════════════════════════════════════
 
 let lastTs = performance.now();
 function frame(ts) {
   const dt = Math.min(ts - lastTs, 100);
   lastTs = ts;
 
-  ctx.fillStyle = "#060b14";
+  ctx.fillStyle = '#060b14';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "rgba(30,50,70,0.3)";
+  // Grid dots
+  ctx.fillStyle = 'rgba(30,50,70,0.3)';
   for (let gx = 0; gx < canvas.width;  gx += 40)
     for (let gy = 0; gy < canvas.height; gy += 40)
       ctx.fillRect(gx, gy, 1, 1);
 
-  applyForces(dt);
+  if (layoutMode === 'line') {
+    applyLineLerp(dt);
+  } else {
+    if (insideNetMode) updateIZone();
+    applyForces(dt);
+  }
+
   for (const n of nodes.values()) n.alpha += (n.targetAlpha - n.alpha) * 0.05;
+
+  drawIZone();
   for (const conn of connections.values()) drawConnection(conn);
   for (const n of nodes.values()) drawNode(n);
 
@@ -507,111 +811,201 @@ function frame(ts) {
   pktCount++;
   if (ts - lastPpsCheck >= 1000) {
     ppsDisplay = pktCount; pktCount = 0; lastPpsCheck = ts;
-    document.getElementById("pps-counter").textContent = `${ppsDisplay} pkt/s`;
-    document.getElementById("node-counter").textContent = `${nodes.size} nodes`;
+    document.getElementById('pps-counter').textContent = `${ppsDisplay} pkt/s`;
+    document.getElementById('node-counter').textContent = `${nodes.size} nodes`;
   }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 
-// ── Legend ─────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// UI panels
+// ══════════════════════════════════════════════════════════════════════════════
 
 function updateLegend() {
-  const container = document.getElementById("legend-items");
-  container.innerHTML = "";
+  const c = document.getElementById('legend-items');
+  c.innerHTML = '';
   for (const n of nodes.values()) {
-    const item = document.createElement("div");
-    item.className = "legend-item";
-    item.innerHTML = `<div class="legend-dot" style="background:${n.color};opacity:${n.online?1:0.3}"></div>`
-                   + `<div class="legend-label${n.online?"":" offline"}">${n.name}</div>`;
-    container.appendChild(item);
+    if (n.isExternal) continue;
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const color = nodeEffectiveColor(n);
+    item.innerHTML = `<div class="legend-dot" style="background:${color};opacity:${n.online?1:0.3}"></div>`
+                   + `<div class="legend-label${n.online?'':' offline'}">${n.name}</div>`;
+    c.appendChild(item);
   }
 }
 
-// ── Process filter panel ───────────────────────────────────────────────────────
+function updateNodeColorPickers() {
+  const list = document.getElementById('node-color-list');
+  if (!list) return;
+  list.innerHTML = '';
+  const overrides = cfg.nodeColors;
+
+  for (const n of nodes.values()) {
+    if (n.isExternal) continue;
+    const color  = overrides[n.id] || n.color;
+    const row    = document.createElement('div');
+    row.className = 'color-row';
+
+    const labelWrap = document.createElement('div');
+    labelWrap.className = 'color-label-wrap';
+    const dot = document.createElement('div');
+    dot.className = 'node-color-dot';
+    dot.style.background = color;
+    const label = document.createElement('label');
+    label.style.fontSize = '11px';
+    label.style.color    = '#8899aa';
+    label.textContent    = n.name;
+    labelWrap.appendChild(dot);
+    labelWrap.appendChild(label);
+
+    const picker = document.createElement('input');
+    picker.type  = 'color';
+    picker.value = color;
+
+    const nodeId = n.id;
+    picker.addEventListener('input', (e) => {
+      const newColor = e.target.value;
+      dot.style.background = newColor;
+
+      // Update localStorage
+      const ov = cfg.nodeColors;
+      ov[nodeId] = newColor;
+      localStorage.setItem('wyn.nodeColors', JSON.stringify(ov));
+
+      // Update local node
+      const node = nodes.get(nodeId);
+      if (node) node.color = newColor;
+      updateLegend();
+
+      // Inform server (fire-and-forget)
+      fetch(`${API}/node-color`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ node_id: nodeId, color: newColor }),
+      }).catch(() => {});
+    });
+
+    row.appendChild(labelWrap);
+    row.appendChild(picker);
+    list.appendChild(row);
+  }
+}
 
 function renderProcFilter() {
   if (procVisible.size === 0) {
-    document.getElementById("proc-filter").style.display = "none";
+    document.getElementById('proc-filter').style.display = 'none';
     return;
   }
-  document.getElementById("proc-filter").style.display = "block";
-
-  const container = document.getElementById("proc-items");
-  container.innerHTML = "";
+  document.getElementById('proc-filter').style.display = 'block';
+  const c = document.getElementById('proc-items');
+  c.innerHTML = '';
   for (const [proc, checked] of procVisible) {
-    const color = proc === "unknown" ? PACKET_COLOR_DEF : getProcessColor(proc);
-    const item = document.createElement("label");
-    item.className = "proc-item";
-
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
+    const color  = proc === 'unknown' ? cfg.colorDefault : getProcessColor(proc);
+    const lbl    = document.createElement('label');
+    lbl.className = 'proc-item';
+    const cb = document.createElement('input');
+    cb.type  = 'checkbox';
     cb.checked = checked;
-    cb.addEventListener("change", () => {
+    cb.addEventListener('change', () => {
       procVisible.set(proc, cb.checked);
       filterActive = [...procVisible.values()].some(v => !v);
     });
-
-    const dot = document.createElement("div");
-    dot.className = "proc-dot";
-    dot.style.background = color;
-
-    const label = document.createElement("span");
-    label.className = "proc-label";
-    label.textContent = proc;
-
-    item.appendChild(cb);
-    item.appendChild(dot);
-    item.appendChild(label);
-    container.appendChild(item);
+    const dot = document.createElement('div');
+    dot.className = 'proc-dot'; dot.style.background = color;
+    const span = document.createElement('span');
+    span.className = 'proc-label'; span.textContent = proc;
+    lbl.appendChild(cb); lbl.appendChild(dot); lbl.appendChild(span);
+    c.appendChild(lbl);
   }
 }
 
-// ── Tooltip ────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Settings panel toggle
+// ══════════════════════════════════════════════════════════════════════════════
 
-const tooltip = document.getElementById("tooltip");
-canvas.addEventListener("mousemove", (e) => {
+let settingsOpen = false;
+function toggleSettings() {
+  settingsOpen = !settingsOpen;
+  document.getElementById('settings-panel').classList.toggle('open', settingsOpen);
+  if (settingsOpen) {
+    updateNodeColorPickers();
+    document.getElementById('sp-inside-net').checked = insideNetMode;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Inside Net mode
+// ══════════════════════════════════════════════════════════════════════════════
+
+function toggleInsideNet() {
+  insideNetMode = !insideNetMode;
+  document.getElementById('btn-inside').classList.toggle('active', insideNetMode);
+  document.getElementById('sp-inside-net').checked = insideNetMode;
+
+  fetch(`${API}/inside_net`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enabled: insideNetMode }),
+  }).catch(() => {});
+
+  if (!insideNetMode) {
+    // Remove all external IP nodes
+    for (const [id, n] of nodes) if (n.isExternal) nodes.delete(id);
+    updateLegend();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Tooltip + Drag
+// ══════════════════════════════════════════════════════════════════════════════
+
+const tooltip = document.getElementById('tooltip');
+canvas.addEventListener('mousemove', (e) => {
+  if (dragging) {
+    dragging.x = e.clientX; dragging.y = e.clientY;
+    dragging.vx = dragging.vy = 0;
+    return;
+  }
   let hit = null;
   for (const n of nodes.values()) {
     const dx = e.clientX - n.x, dy = e.clientY - n.y;
     if (dx*dx + dy*dy <= (n.radius+8)**2) { hit = n; break; }
   }
   if (hit) {
-    tooltip.style.display = "block";
-    tooltip.style.left = (e.clientX + 14) + "px";
-    tooltip.style.top  = (e.clientY - 10) + "px";
-    document.getElementById("tt-name").textContent = hit.name;
-    document.getElementById("tt-ips").textContent  = hit.ips.join(", ") || "—";
-    const s = document.getElementById("tt-status");
-    s.textContent = hit.online ? "Online" : "Offline";
-    s.style.color = hit.online ? "#2ECC71" : "#E74C3C";
+    tooltip.style.display = 'block';
+    tooltip.style.left    = (e.clientX + 14) + 'px';
+    tooltip.style.top     = (e.clientY - 10) + 'px';
+    document.getElementById('tt-name').textContent = hit.name;
+    document.getElementById('tt-ips').textContent  = hit.ips.join(', ') || '—';
+    const s = document.getElementById('tt-status');
+    s.textContent = hit.online ? 'Online' : 'Offline';
+    s.style.color = hit.online ? '#2ECC71' : '#E74C3C';
   } else {
-    tooltip.style.display = "none";
+    tooltip.style.display = 'none';
   }
 });
-canvas.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
-
-// ── Drag ───────────────────────────────────────────────────────────────────────
+canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
 let dragging = null;
-canvas.addEventListener("mousedown", (e) => {
+canvas.addEventListener('mousedown', (e) => {
   for (const n of nodes.values()) {
     if (n.pinned) continue;
     const dx = e.clientX - n.x, dy = e.clientY - n.y;
     if (dx*dx + dy*dy <= (n.radius+8)**2) { dragging = n; n.vx = n.vy = 0; break; }
   }
 });
-canvas.addEventListener("mousemove", (e) => {
-  if (dragging) { dragging.x = e.clientX; dragging.y = e.clientY; dragging.vx = dragging.vy = 0; }
-});
-canvas.addEventListener("mouseup", () => { dragging = null; });
+canvas.addEventListener('mouseup', () => { dragging = null; });
 
-// ── WebSocket ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// WebSocket
+// ══════════════════════════════════════════════════════════════════════════════
 
-const statusEl = document.getElementById("conn-status");
+const statusEl = document.getElementById('conn-status');
 function setStatus(ok) {
-  statusEl.textContent = ok ? "● Connected" : "● Disconnected";
-  statusEl.className = `status ${ok ? "connected" : "disconnected"}`;
+  statusEl.textContent = ok ? '● Connected' : '● Disconnected';
+  statusEl.className   = `status ${ok ? 'connected' : 'disconnected'}`;
 }
 
 function connectWS() {
@@ -623,30 +1017,67 @@ function connectWS() {
     let msg;
     try { msg = JSON.parse(e.data); } catch { return; }
     switch (msg.type) {
-      case "topology":
+      case 'topology':
         for (const n of msg.nodes || []) upsertNode(n);
         for (const c of msg.connections || []) {
           upsertConnection(c.src, c.dst);
           const conn = connections.get(connKey(c.src, c.dst));
           if (conn && c.last_seen) conn.lastSeen = c.last_seen * 1000;
         }
+        if (msg.inside_net !== undefined) {
+          insideNetMode = msg.inside_net;
+          document.getElementById('btn-inside').classList.toggle('active', insideNetMode);
+          document.getElementById('sp-inside-net').checked = insideNetMode;
+        }
         break;
-      case "node_update":
+      case 'node_update':
         upsertNode(msg.node);
         break;
-      case "packet":
+      case 'external_ip_new':
+        upsertNode(msg.node);
+        break;
+      case 'external_ip_expired':
+        removeExternalIp(msg.ip);
+        break;
+      case 'packet':
         upsertConnection(msg.src, msg.dst, msg.process || null);
         spawnBullet(msg.src, msg.dst, msg.process || null);
         break;
-      case "connection_new":
+      case 'connection_new':
         upsertConnection(msg.src, msg.dst);
         break;
-      case "connection_expired":
+      case 'connection_expired':
         removeConnection(msg.src, msg.dst);
+        break;
+      case 'inside_net_changed':
+        insideNetMode = msg.enabled;
+        document.getElementById('btn-inside').classList.toggle('active', insideNetMode);
+        document.getElementById('sp-inside-net').checked = insideNetMode;
+        if (!insideNetMode) {
+          for (const [id, n] of nodes) if (n.isExternal) nodes.delete(id);
+          updateLegend();
+        }
         break;
     }
   };
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Init
+// ══════════════════════════════════════════════════════════════════════════════
+
+initColorPickers();
+setLayout(cfg.layoutMode);
+
+// Load server settings
+fetch(`${API}/settings`).then(r => r.json()).then(s => {
+  if (s.inside_net !== undefined && s.inside_net) {
+    insideNetMode = true;
+    document.getElementById('btn-inside').classList.add('active');
+    document.getElementById('sp-inside-net').checked = true;
+  }
+}).catch(() => {});
+
 connectWS();
   </script>
 </body>

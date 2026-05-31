@@ -190,6 +190,20 @@ install_files() {
     ok "Server files installed to $INSTALL_DIR"
 }
 
+# ── wyn CLI ────────────────────────────────────────────────────────────────────
+
+install_wyn_cli() {
+    local wyn_src="$SCRIPT_DIR/wyn-ctl/wyn"
+    if [[ ! -f "$wyn_src" ]]; then
+        warn "wyn CLI not found at $wyn_src — skipping"
+        return
+    fi
+    cp "$wyn_src" /usr/local/bin/wyn
+    chmod +x /usr/local/bin/wyn
+    ok "wyn CLI installed → /usr/local/bin/wyn"
+    info "  Try: wyn status | wyn logs | wyn update | wyn --help"
+}
+
 # ── systemd service ────────────────────────────────────────────────────────────
 
 install_service() {
@@ -233,6 +247,7 @@ main() {
     write_config
     pip_install "$SERVER_DIR/requirements.txt"
     install_files
+    install_wyn_cli
 
     echo ""
     local install_svc
@@ -265,6 +280,13 @@ main() {
     echo -e "${GREEN}${BOLD}═══════════════════════════════════════${NC}"
     echo -e "  ${CYAN}Web UI   →  http://${ip}:${HTTP_PORT}${NC}"
     echo -e "  ${CYAN}Agents   →  ws://${ip}:${AGENT_PORT}${NC}"
+    echo ""
+    echo -e "  ${BOLD}wyn CLI commands:${NC}"
+    echo "    wyn status            Show service status"
+    echo "    wyn restart           Restart server + agent"
+    echo "    wyn logs              Show server logs"
+    echo "    wyn update            Update to latest version"
+    echo "    wyn uninstall         Remove installation"
     echo ""
 }
 

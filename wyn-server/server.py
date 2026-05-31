@@ -17,8 +17,10 @@ import websockets
 import yaml
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,7 +33,7 @@ log = logging.getLogger("wyn-server")
 
 DEFAULT_CONFIG: dict = {
     "server":        {"http_port": 8080, "agent_port": 8765},
-    "topology":      {"connection_ttl": 1800, "node_colors": {}},
+    "topology":      {"connection_ttl": 1800, "node_colors": {}, "inside_net": False},
     "internet_node": {"label": "Internet", "color": "#95A5A6"},
     "logging":       {"level": "INFO"},
 }
@@ -41,6 +43,8 @@ COLOR_PALETTE = [
     "#1ABC9C", "#F1C40F", "#E91E63", "#00BCD4", "#8BC34A",
     "#FF5722", "#3F51B5", "#795548", "#607D8B", "#FF9800",
 ]
+
+EXTERNAL_IP_TTL = 60  # seconds
 
 
 def load_config(path: str | None) -> dict:
@@ -85,14 +89,18 @@ class TopologyManager:
         self._nodes: dict[str, NodeInfo] = {}
         self._ip_to_node: dict[str, str] = {}
         self._connections: dict[tuple[str, str], float] = {}
+        self._external_ips: dict[str, float] = {}  # ip → last_seen (inside_net mode)
         self._color_index = 0
         self._lock = asyncio.Lock()
+        self._inside_net: bool = cfg["topology"].get("inside_net", False)
         self._internet = NodeInfo(
             "internet",
             cfg["internet_node"]["label"],
             cfg["internet_node"]["color"],
             [],
         )
+
+    # ── Node management ────────────────────────────────────────────────────────
 
     def _next_color(self, node_id: str) -> str:
         override = self._cfg["topology"]["node_colors"].get(node_id)
@@ -124,8 +132,55 @@ class TopologyManager:
                 self._nodes[node_id].online = False
         log.info("Node offline: %s", node_id)
 
+    def set_node_color(self, node_id: str, color: str) -> bool:
+        """Returns True if the node exists."""
+        if node_id == "internet":
+            self._cfg["internet_node"]["color"] = color
+            self._internet.color = color
+            return True
+        node = self._nodes.get(node_id)
+        if node:
+            node.color = color
+            self._cfg["topology"]["node_colors"][node_id] = color
+            return True
+        return False
+
+    # ── IP resolution ──────────────────────────────────────────────────────────
+
     def resolve_ip(self, ip: str) -> str:
-        return self._ip_to_node.get(ip, "internet")
+        known = self._ip_to_node.get(ip)
+        if known:
+            return known
+        if self._inside_net:
+            return ip  # individual external IP node
+        return "internet"
+
+    # ── Inside Net ─────────────────────────────────────────────────────────────
+
+    def set_inside_net(self, enabled: bool) -> None:
+        self._inside_net = enabled
+        if not enabled:
+            self._external_ips.clear()
+        log.info("Inside Net mode: %s", "on" if enabled else "off")
+
+    async def touch_external_ip(self, ip: str) -> bool:
+        """Register/refresh an external IP. Returns True if new."""
+        async with self._lock:
+            is_new = ip not in self._external_ips
+            self._external_ips[ip] = time.time()
+        return is_new
+
+    async def expire_external_ips(self) -> list[str]:
+        now = time.time()
+        expired: list[str] = []
+        async with self._lock:
+            for ip, ts in list(self._external_ips.items()):
+                if now - ts > EXTERNAL_IP_TTL:
+                    del self._external_ips[ip]
+                    expired.append(ip)
+        return expired
+
+    # ── Connections ────────────────────────────────────────────────────────────
 
     async def record_connection(self, src: str, dst: str) -> bool:
         key = (src, dst)
@@ -145,11 +200,23 @@ class TopologyManager:
                     expired.append(key)
         return expired
 
+    # ── Snapshot ───────────────────────────────────────────────────────────────
+
     def snapshot(self) -> dict:
         nodes = [self._internet.to_dict()] + [n.to_dict() for n in self._nodes.values()]
+        if self._inside_net:
+            for ip in self._external_ips:
+                nodes.append({
+                    "id": ip, "name": ip, "color": "#95A5A6",
+                    "online": True, "ips": [ip], "is_external": True,
+                })
         conns = [{"src": s, "dst": d, "last_seen": ts}
                  for (s, d), ts in self._connections.items()]
-        return {"nodes": nodes, "connections": conns}
+        return {
+            "nodes": nodes,
+            "connections": conns,
+            "inside_net": self._inside_net,
+        }
 
 
 # ── UI client manager ──────────────────────────────────────────────────────────
@@ -190,11 +257,8 @@ class UIClients:
 # ── Packet animation rate limiter ─────────────────────────────────────────────
 
 class PacketRateLimiter:
-    """Throttles packet-dot events per connection so the UI stays readable.
-    Node→node connections get more updates than node→internet ones."""
-
-    NODE_INTERVAL    = 0.05   # 20 events/s for known node pairs
-    INTERNET_INTERVAL = 0.15  # 6-7 events/s for internet connections
+    NODE_INTERVAL     = 0.05   # 20 events/s for known node pairs
+    INTERNET_INTERVAL = 0.15   # ~7 events/s for internet connections
 
     def __init__(self):
         self._last: dict[tuple[str, str], float] = {}
@@ -219,32 +283,50 @@ async def handle_packet_batch(msg: dict, topo: TopologyManager,
                                ui_clients: UIClients) -> None:
     node_id: str = msg.get("node_id", "unknown")
     for event in msg.get("events", []):
-        src_node = topo.resolve_ip(event.get("src_ip", ""))
-        dst_node = topo.resolve_ip(event.get("dst_ip", ""))
+        src_ip = event.get("src_ip", "")
+        dst_ip = event.get("dst_ip", "")
+        src_node = topo.resolve_ip(src_ip)
+        dst_node = topo.resolve_ip(dst_ip)
 
         if src_node == "internet" and dst_node == "internet":
             src_node = node_id
         if src_node == dst_node:
             continue
 
-        is_new = await topo.record_connection(src_node, dst_node)
+        # Register individual external IPs in Inside Net mode
+        if topo._inside_net:
+            for ip, nid in ((src_ip, src_node), (dst_ip, dst_node)):
+                if nid not in topo._nodes and nid != "internet" and ip:
+                    is_new = await topo.touch_external_ip(nid)
+                    if is_new:
+                        await ui_clients.broadcast({
+                            "type": "external_ip_new",
+                            "node": {
+                                "id": nid, "name": nid, "color": "#95A5A6",
+                                "online": True, "ips": [ip], "is_external": True,
+                            },
+                        })
+                    else:
+                        await topo.touch_external_ip(nid)
 
+        is_new = await topo.record_connection(src_node, dst_node)
         if is_new:
             await ui_clients.broadcast({"type": "connection_new",
                                         "src": src_node, "dst": dst_node})
 
-        # Rate-limit animation dots — connection tracking above is always updated
         if _rate_limiter.should_emit(src_node, dst_node):
             pkt: dict[str, Any] = {
-                "type": "packet", "src": src_node, "dst": dst_node,
-                "proto": event.get("proto", "OTHER"), "bytes": event.get("bytes", 0),
+                "type": "packet",
+                "src": src_node, "dst": dst_node,
+                "proto": event.get("proto", "OTHER"),
+                "bytes": event.get("bytes", 0),
             }
             if "process" in event:
                 pkt["process"] = event["process"]
             await ui_clients.broadcast(pkt)
 
 
-# ── Agent WebSocket server  (port 8765, raw websockets library) ────────────────
+# ── Agent WebSocket server  (port 8765) ────────────────────────────────────────
 
 def make_agent_handler(topo: TopologyManager, ui_clients: UIClients):
     async def handler(websocket) -> None:
@@ -284,16 +366,27 @@ def make_agent_handler(topo: TopologyManager, ui_clients: UIClients):
     return handler
 
 
-# ── FastAPI app  (port 8080: HTTP + /ws/ui) ────────────────────────────────────
+# ── FastAPI app  (port 8080) ───────────────────────────────────────────────────
+
+class NodeColorRequest(BaseModel):
+    node_id: str
+    color: str
+
+class InsideNetRequest(BaseModel):
+    enabled: bool
+
 
 def create_fastapi_app(topo: TopologyManager, ui_clients: UIClients,
                         ui_dir: Path | None = None) -> FastAPI:
     app = FastAPI(title="WatchYourNetwork", docs_url=None, redoc_url=None)
+
+    app.add_middleware(CORSMiddleware, allow_origins=["*"],
+                       allow_methods=["*"], allow_headers=["*"])
+
     _here = Path(__file__).resolve().parent
     if ui_dir:
         html_path = ui_dir / "index.html"
     else:
-        # Try sibling wyn-ui/ (installed) then parent wyn-ui/ (repo)
         html_path = next(
             (p for p in [_here / "wyn-ui" / "index.html",
                          _here.parent / "wyn-ui" / "index.html"]
@@ -311,6 +404,39 @@ def create_fastapi_app(topo: TopologyManager, ui_clients: UIClients,
     @app.get("/api/topology")
     async def api_topology():
         return topo.snapshot()
+
+    @app.post("/api/node-color")
+    async def api_node_color(req: NodeColorRequest):
+        ok = topo.set_node_color(req.node_id, req.color)
+        if not ok:
+            return JSONResponse({"error": "node not found"}, status_code=404)
+        node = topo._nodes.get(req.node_id)
+        if node:
+            await ui_clients.broadcast({"type": "node_update", "node": node.to_dict()})
+        elif req.node_id == "internet":
+            await ui_clients.broadcast({
+                "type": "node_update",
+                "node": topo._internet.to_dict(),
+            })
+        return {"ok": True}
+
+    @app.post("/api/inside_net")
+    async def api_inside_net(req: InsideNetRequest):
+        topo.set_inside_net(req.enabled)
+        await ui_clients.broadcast({
+            "type": "inside_net_changed",
+            "enabled": req.enabled,
+        })
+        if not req.enabled:
+            await ui_clients.broadcast({"type": "topology", **topo.snapshot()})
+        return {"inside_net": req.enabled}
+
+    @app.get("/api/settings")
+    async def api_settings():
+        return {
+            "inside_net": topo._inside_net,
+            "version": VERSION,
+        }
 
     @app.websocket("/ws/ui")
     async def ui_ws(ws: WebSocket):
@@ -334,10 +460,13 @@ def create_fastapi_app(topo: TopologyManager, ui_clients: UIClients,
 
 async def _ttl_loop(topo: TopologyManager, ui_clients: UIClients) -> None:
     while True:
-        await asyncio.sleep(60)
+        await asyncio.sleep(10)
         for src, dst in await topo.expire_connections():
             await ui_clients.broadcast({"type": "connection_expired",
                                         "src": src, "dst": dst})
+        if topo._inside_net:
+            for ip in await topo.expire_external_ips():
+                await ui_clients.broadcast({"type": "external_ip_expired", "ip": ip})
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
