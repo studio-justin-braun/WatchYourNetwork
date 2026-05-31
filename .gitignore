@@ -10,9 +10,10 @@ build/
 .pytest_cache/
 *.log
 
-# Config files with real credentials / IPs
+# Config files with real IPs/credentials — use the .example files as templates
 wyn-agent/wyn-agent.conf
 wyn-server/config.yaml
+/etc/wyn/
 
 # OS
 .DS_Store

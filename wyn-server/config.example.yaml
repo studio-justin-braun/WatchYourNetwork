@@ -1,7 +1,6 @@
 server:
-  agent_port: 8765
-  ui_port: 8766
   http_port: 8080
+  agent_port: 8765
 
 topology:
   connection_ttl: 1800

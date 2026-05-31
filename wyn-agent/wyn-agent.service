@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /opt/wyn-agent/agent.py --config /etc/wyn-agent/wyn-agent.conf
+ExecStart=/opt/wyn-agent/.venv/bin/python /opt/wyn-agent/agent.py --config /etc/wyn-agent/wyn-agent.conf
 Restart=on-failure
 RestartSec=10
 User=root

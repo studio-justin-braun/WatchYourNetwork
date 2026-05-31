@@ -71,22 +71,26 @@ Each node is a colored circle. Packets appear as small bright-yellow dots that f
 ```bash
 git clone https://github.com/yourusername/WatchYourNetwork.git
 cd WatchYourNetwork/wyn-server
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 cp config.example.yaml config.yaml
 # edit config.yaml if needed
-python server.py
+python3 server.py
 ```
 
-The web UI is available at `http://<server-ip>:80`.
+The web UI is available at `http://<server-ip>:8080`.
 
 ### 2 — Install the WYN Agent on each host
 
 ```bash
 cd WatchYourNetwork/wyn-agent
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 cp wyn-agent.example.conf wyn-agent.conf
-nano wyn-agent.conf   # set server IP, node name, interface
-sudo python agent.py  # requires root for raw packet capture
+nano wyn-agent.conf           # set server IP, node name, interface
+sudo .venv/bin/python agent.py  # requires root for raw packet capture
 ```
 
 See [AGENT.md](AGENT.md) for full configuration reference and systemd unit setup.
