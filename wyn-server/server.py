@@ -187,6 +187,32 @@ class UIClients:
             pass
 
 
+# ── Packet animation rate limiter ─────────────────────────────────────────────
+
+class PacketRateLimiter:
+    """Throttles packet-dot events per connection so the UI stays readable.
+    Node→node connections get more updates than node→internet ones."""
+
+    NODE_INTERVAL    = 0.05   # 20 events/s for known node pairs
+    INTERNET_INTERVAL = 0.15  # 6-7 events/s for internet connections
+
+    def __init__(self):
+        self._last: dict[tuple[str, str], float] = {}
+
+    def should_emit(self, src: str, dst: str) -> bool:
+        involves_internet = src == "internet" or dst == "internet"
+        interval = self.INTERNET_INTERVAL if involves_internet else self.NODE_INTERVAL
+        key = (src, dst)
+        now = time.time()
+        if now - self._last.get(key, 0.0) >= interval:
+            self._last[key] = now
+            return True
+        return False
+
+
+_rate_limiter = PacketRateLimiter()
+
+
 # ── Packet handling ────────────────────────────────────────────────────────────
 
 async def handle_packet_batch(msg: dict, topo: TopologyManager,
@@ -203,17 +229,19 @@ async def handle_packet_batch(msg: dict, topo: TopologyManager,
 
         is_new = await topo.record_connection(src_node, dst_node)
 
-        pkt: dict[str, Any] = {
-            "type": "packet", "src": src_node, "dst": dst_node,
-            "proto": event.get("proto", "OTHER"), "bytes": event.get("bytes", 0),
-        }
-        if "process" in event:
-            pkt["process"] = event["process"]
-
-        await ui_clients.broadcast(pkt)
         if is_new:
             await ui_clients.broadcast({"type": "connection_new",
                                         "src": src_node, "dst": dst_node})
+
+        # Rate-limit animation dots — connection tracking above is always updated
+        if _rate_limiter.should_emit(src_node, dst_node):
+            pkt: dict[str, Any] = {
+                "type": "packet", "src": src_node, "dst": dst_node,
+                "proto": event.get("proto", "OTHER"), "bytes": event.get("bytes", 0),
+            }
+            if "process" in event:
+                pkt["process"] = event["process"]
+            await ui_clients.broadcast(pkt)
 
 
 # ── Agent WebSocket server  (port 8765, raw websockets library) ────────────────
