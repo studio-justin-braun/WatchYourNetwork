@@ -78,12 +78,21 @@ def _deep_merge(base: dict, override: dict) -> None:
 # ── Local IP detection ─────────────────────────────────────────────────────────
 
 def get_local_ips(interfaces: list[str]) -> list[str]:
-    ips = []
-    net_addrs = psutil.net_if_addrs()
-    for iface in interfaces:
-        for addr in net_addrs.get(iface, []):
-            if addr.family in (socket.AF_INET, socket.AF_INET6):
-                ip = addr.address.split("%")[0]
+    """Return IPs from ALL non-loopback interfaces so the server can match traffic
+    regardless of which interface a packet enters/leaves on."""
+    ips: list[str] = []
+    seen: set[str] = set()
+    for iface, addrs in psutil.net_if_addrs().items():
+        if iface == "lo":
+            continue
+        for addr in addrs:
+            if addr.family not in (socket.AF_INET, socket.AF_INET6):
+                continue
+            ip = addr.address.split("%")[0]
+            if ip.startswith("127.") or ip == "::1":
+                continue
+            if ip not in seen:
+                seen.add(ip)
                 ips.append(ip)
     return ips
 
@@ -210,21 +219,28 @@ class WYNAgent:
         if event:
             with self._lock:
                 self._buffer.append(event)
+                total = len(self._buffer)
+            if total == 1 or total % 500 == 0:
+                log.debug("Buffer: %d packets queued", total)
 
     def _start_sniffer(self) -> None:
         ifaces = self.cfg["capture"]["interfaces"]
         bpf = self.cfg["capture"]["bpf_filter"] or None
         snap = self.cfg["capture"]["snap_length"]
-
-        self._sniffer = AsyncSniffer(
-            iface=ifaces,
-            filter=bpf,
-            prn=self._on_packet,
-            store=False,
-            snaplen=snap,
-        )
-        self._sniffer.start()
-        log.info("Sniffer started on interfaces: %s", ifaces)
+        try:
+            self._sniffer = AsyncSniffer(
+                iface=ifaces,
+                filter=bpf,
+                prn=self._on_packet,
+                store=False,
+                snaplen=snap,
+            )
+            self._sniffer.start()
+            log.info("Sniffer started on %s  (bpf=%r)", ifaces, bpf or "none")
+        except Exception as exc:
+            log.error("Sniffer FAILED to start: %s", exc)
+            log.error("Is libpcap installed? Try: apt install libpcap-dev")
+            raise
 
     def _stop_sniffer(self) -> None:
         if self._sniffer and self._sniffer.running:
@@ -251,6 +267,7 @@ class WYNAgent:
     async def _send_loop(self, ws) -> None:
         interval = self.cfg["report"]["batch_interval_ms"] / 1000
         node_id = self.cfg["node"]["id"]
+        total_sent = 0
         while self._running:
             await asyncio.sleep(interval)
             batch = self._drain_buffer()
@@ -262,7 +279,11 @@ class WYNAgent:
                         "ts": time.time(),
                         "events": batch,
                     }))
-                except Exception:
+                    total_sent += len(batch)
+                    if total_sent % 100 < len(batch):
+                        log.debug("Sent %d packets total to server", total_sent)
+                except Exception as exc:
+                    log.warning("Send failed: %s", exc)
                     break
 
     async def _heartbeat_loop(self, ws) -> None:
@@ -284,11 +305,12 @@ class WYNAgent:
         port = self.cfg["server"]["port"]
         uri = f"ws://{host}:{port}/ws/agent"
 
-        log.info("Connecting to WYN Server at %s", uri)
+        log.info("Connecting to WYN Server at %s …", uri)
         try:
             async with websockets.connect(uri, ping_interval=20, ping_timeout=10) as ws:
                 await ws.send(self._hello_message())
-                log.info("Connected. Node ID: %s", self.cfg["node"]["id"])
+                log.info("Connected to server. Node=%s  local_ips=%s",
+                         self.cfg["node"]["id"], self._local_ips)
                 self._start_sniffer()
                 try:
                     await asyncio.gather(
@@ -298,7 +320,9 @@ class WYNAgent:
                 finally:
                     self._stop_sniffer()
         except (OSError, websockets.exceptions.WebSocketException) as exc:
-            log.warning("Connection lost: %s", exc)
+            log.warning("Connection error: %s — will retry", exc)
+        except Exception as exc:
+            log.error("Unexpected agent error: %s", exc, exc_info=True)
 
     async def run(self) -> None:
         self._running = True
@@ -324,6 +348,8 @@ def main() -> None:
     parser.add_argument("--node-id", help="Node ID override")
     parser.add_argument("--iface", "-i", help="Interface override")
     parser.add_argument("--verbose", "-v", action="store_true")
+    parser.add_argument("--test-capture", action="store_true",
+                        help="Capture 10 packets, print them, then exit (no server needed)")
     args = parser.parse_args()
 
     if args.verbose:
@@ -333,8 +359,25 @@ def main() -> None:
         log.warning("Not running as root — packet capture may fail without CAP_NET_RAW")
 
     cfg = load_config(args.config, args)
-    agent = WYNAgent(cfg)
 
+    if args.test_capture:
+        ifaces = cfg["capture"]["interfaces"]
+        print(f"\nCapture test on {ifaces} — waiting for 10 packets (Ctrl+C to stop early)…\n")
+        from scapy.all import sniff as scapy_sniff
+        def show(pkt):
+            event = parse_packet(pkt, cfg, None)
+            if event:
+                print(f"  {event['src_ip']}:{event['src_port']}  →  "
+                      f"{event['dst_ip']}:{event['dst_port']}  [{event['proto']}]  "
+                      f"{event['bytes']}B")
+            else:
+                print(f"  (filtered) {pkt.summary()}")
+        scapy_sniff(iface=ifaces, count=10, prn=show)
+        local_ips = get_local_ips(ifaces)
+        print(f"\nLocal IPs that will be registered: {local_ips}")
+        return
+
+    agent = WYNAgent(cfg)
     try:
         asyncio.run(agent.run())
     except KeyboardInterrupt:

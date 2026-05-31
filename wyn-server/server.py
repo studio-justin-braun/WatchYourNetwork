@@ -258,16 +258,21 @@ def make_agent_handler(topo: TopologyManager, ui_clients: UIClients):
 
 # ── FastAPI app  (port 8080: HTTP + /ws/ui) ────────────────────────────────────
 
-def create_fastapi_app(topo: TopologyManager, ui_clients: UIClients) -> FastAPI:
+def create_fastapi_app(topo: TopologyManager, ui_clients: UIClients,
+                        ui_dir: Path | None = None) -> FastAPI:
     app = FastAPI(title="WatchYourNetwork", docs_url=None, redoc_url=None)
     _here = Path(__file__).resolve().parent
-    # Support both repo layout (../wyn-ui/) and installed layout (./wyn-ui/)
-    html_path = next(
-        (p for p in [_here / "wyn-ui" / "index.html",
-                     _here.parent / "wyn-ui" / "index.html"]
-         if p.exists()),
-        _here.parent / "wyn-ui" / "index.html",
-    )
+    if ui_dir:
+        html_path = ui_dir / "index.html"
+    else:
+        # Try sibling wyn-ui/ (installed) then parent wyn-ui/ (repo)
+        html_path = next(
+            (p for p in [_here / "wyn-ui" / "index.html",
+                         _here.parent / "wyn-ui" / "index.html"]
+             if p.exists()),
+            _here / "wyn-ui" / "index.html",
+        )
+    log.info("UI path: %s  (exists=%s)", html_path, html_path.exists())
 
     @app.get("/")
     async def root():
@@ -314,6 +319,7 @@ def main() -> None:
     parser.add_argument("--config", "-c", default="config.yaml")
     parser.add_argument("--http-port",  type=int)
     parser.add_argument("--agent-port", type=int)
+    parser.add_argument("--ui-dir", type=Path, help="Path to wyn-ui directory")
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
 
@@ -328,7 +334,7 @@ def main() -> None:
 
     topo       = TopologyManager(cfg)
     ui_clients = UIClients()
-    app        = create_fastapi_app(topo, ui_clients)
+    app        = create_fastapi_app(topo, ui_clients, ui_dir=args.ui_dir)
     handler    = make_agent_handler(topo, ui_clients)
 
     log.info("WYN Server v%s", VERSION)
