@@ -260,7 +260,14 @@ def make_agent_handler(topo: TopologyManager, ui_clients: UIClients):
 
 def create_fastapi_app(topo: TopologyManager, ui_clients: UIClients) -> FastAPI:
     app = FastAPI(title="WatchYourNetwork", docs_url=None, redoc_url=None)
-    html_path = Path(__file__).parent.parent / "wyn-ui" / "index.html"
+    _here = Path(__file__).resolve().parent
+    # Support both repo layout (../wyn-ui/) and installed layout (./wyn-ui/)
+    html_path = next(
+        (p for p in [_here / "wyn-ui" / "index.html",
+                     _here.parent / "wyn-ui" / "index.html"]
+         if p.exists()),
+        _here.parent / "wyn-ui" / "index.html",
+    )
 
     @app.get("/")
     async def root():
